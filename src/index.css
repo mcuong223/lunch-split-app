@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .card-shadow {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(13,148,136,0.07);
+  }
+  .card-shadow-hover {
+    box-shadow: 0 4px 16px rgba(13,148,136,0.13), 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-shadow-paid {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(13,148,136,0.10);
+  }
+
+  .dark .card-shadow {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .dark .card-shadow-hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.25);
+  }
+  .dark .card-shadow-paid {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25), 0 4px 12px rgba(13,148,136,0.15);
+  }
+}

@@ -1,0 +1,113 @@
+import { useState } from 'react'
+import { Check, Crown, Loader2, RotateCcw } from 'lucide-react'
+import { markPaid, markUnpaid } from '../lib/supabase'
+import type { MealParticipant } from '../types'
+
+interface Props {
+  participant: MealParticipant
+  payerName: string
+  onToggle: (isPaid: boolean) => void
+  onRevert: (originalIsPaid: boolean, originalPaidAt: string | null) => void
+}
+
+function formatAmount(amount: number): string {
+  return amount.toLocaleString('vi-VN') + 'đ'
+}
+
+export default function ParticipantRow({ participant, payerName, onToggle, onRevert }: Props) {
+  const [loading, setLoading] = useState(false)
+
+  const isPayer = participant.name === payerName && participant.amount_owed === 0
+  const isPaid = participant.is_paid
+
+  async function handleMarkPaid() {
+    const prev = { is_paid: participant.is_paid, paid_at: participant.paid_at }
+    onToggle(true)
+    setLoading(true)
+    try {
+      await markPaid(participant.id)
+    } catch {
+      onRevert(prev.is_paid, prev.paid_at)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleMarkUnpaid() {
+    const prev = { is_paid: participant.is_paid, paid_at: participant.paid_at }
+    onToggle(false)
+    setLoading(true)
+    try {
+      await markUnpaid(participant.id)
+    } catch {
+      onRevert(prev.is_paid, prev.paid_at)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between py-2.5 gap-3">
+      {/* Name + dish */}
+      <div className="flex flex-col min-w-0 flex-1">
+        <span className={`text-sm font-semibold truncate transition-colors duration-200 ${
+          isPaid || isPayer ? 'text-teal-700/70' : 'text-slate-800'
+        }`}>
+          {participant.name}
+        </span>
+        {participant.dish && (
+          <span className="text-xs italic text-slate-400 truncate mt-0.5">{participant.dish}</span>
+        )}
+      </div>
+
+      {/* Amount + status */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {!isPayer && (
+          <span className={`text-sm font-bold tabular-nums font-mono tracking-tight transition-all duration-200 ${
+            isPaid ? 'text-teal-500/50 line-through' : 'text-slate-700'
+          }`}>
+            {formatAmount(participant.amount_owed)}
+          </span>
+        )}
+
+        {isPayer ? (
+          <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-semibold">
+            <Crown className="w-3 h-3" />
+            Payer
+          </span>
+        ) : isPaid ? (
+          <button
+            onClick={handleMarkUnpaid}
+            disabled={loading}
+            aria-label={`Mark ${participant.name} as unpaid`}
+            title="Click to undo"
+            className="group inline-flex items-center gap-1 text-xs bg-teal-50 text-teal-600 border border-teal-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 disabled:opacity-60 px-2.5 py-1 rounded-full font-semibold transition-all duration-200 cursor-pointer"
+          >
+            {loading
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <>
+                  <Check className="w-3 h-3 group-hover:hidden" />
+                  <RotateCcw className="w-3 h-3 hidden group-hover:block" />
+                </>
+            }
+            <span className="group-hover:hidden">Paid</span>
+            <span className="hidden group-hover:inline">{loading ? 'Saving…' : 'Undo'}</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleMarkPaid}
+            disabled={loading}
+            aria-label={`Mark ${participant.name} as paid`}
+            className="inline-flex items-center gap-1.5 text-xs bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-full font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-orange-200 hover:shadow-orange-300 hover:-translate-y-0.5"
+          >
+            {loading
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <Check className="w-3 h-3" />
+            }
+            {loading ? 'Saving…' : 'Mark Paid'}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
