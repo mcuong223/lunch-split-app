@@ -48,40 +48,46 @@ export default function ParticipantRow({ participant, payerName, onToggle, onRev
 
   return (
     <div className="flex items-center justify-between py-2.5 gap-3">
-      {/* Name + dish */}
+      {/* Tên + món */}
       <div className="flex flex-col min-w-0 flex-1">
         <span className={`text-sm font-semibold truncate transition-colors duration-200 ${
-          isPaid || isPayer ? 'text-teal-700/70' : 'text-slate-800'
+          isPaid || isPayer
+            ? 'text-teal-700/70 dark:text-teal-500/70'
+            : 'text-slate-800 dark:text-slate-100'
         }`}>
           {participant.name}
         </span>
         {participant.dish && (
-          <span className="text-xs italic text-slate-400 truncate mt-0.5">{participant.dish}</span>
+          <span className="text-xs italic text-slate-400 dark:text-slate-500 truncate mt-0.5">
+            {participant.dish}
+          </span>
         )}
       </div>
 
-      {/* Amount + status */}
+      {/* Tiền + trạng thái */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {!isPayer && (
           <span className={`text-sm font-bold tabular-nums font-mono tracking-tight transition-all duration-200 ${
-            isPaid ? 'text-teal-500/50 line-through' : 'text-slate-700'
+            isPaid
+              ? 'text-teal-500/50 dark:text-teal-600/50 line-through'
+              : 'text-slate-700 dark:text-slate-200'
           }`}>
             {formatAmount(participant.amount_owed)}
           </span>
         )}
 
         {isPayer ? (
-          <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-semibold">
+          <span className="inline-flex items-center gap-1 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-full font-semibold">
             <Crown className="w-3 h-3" />
-            Payer
+            Trả tiền
           </span>
         ) : isPaid ? (
           <button
             onClick={handleMarkUnpaid}
             disabled={loading}
-            aria-label={`Mark ${participant.name} as unpaid`}
-            title="Click to undo"
-            className="group inline-flex items-center gap-1 text-xs bg-teal-50 text-teal-600 border border-teal-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 disabled:opacity-60 px-2.5 py-1 rounded-full font-semibold transition-all duration-200 cursor-pointer"
+            aria-label={`Đánh dấu ${participant.name} chưa trả`}
+            title="Nhấn để huỷ"
+            className="group inline-flex items-center gap-1 text-xs bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-800 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-800 disabled:opacity-60 px-2.5 py-1 rounded-full font-semibold transition-all duration-200 cursor-pointer"
           >
             {loading
               ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -90,21 +96,18 @@ export default function ParticipantRow({ participant, payerName, onToggle, onRev
                   <RotateCcw className="w-3 h-3 hidden group-hover:block" />
                 </>
             }
-            <span className="group-hover:hidden">Paid</span>
-            <span className="hidden group-hover:inline">{loading ? 'Saving…' : 'Undo'}</span>
+            <span className="group-hover:hidden">Đã trả</span>
+            <span className="hidden group-hover:inline">{loading ? 'Đang lưu…' : 'Hoàn tác'}</span>
           </button>
         ) : (
           <button
             onClick={handleMarkPaid}
             disabled={loading}
-            aria-label={`Mark ${participant.name} as paid`}
-            className="inline-flex items-center gap-1.5 text-xs bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-full font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-orange-200 hover:shadow-orange-300 hover:-translate-y-0.5"
+            aria-label={`Đánh dấu ${participant.name} đã trả`}
+            className="inline-flex items-center gap-1.5 text-xs bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-full font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-orange-200 dark:shadow-orange-900 hover:shadow-orange-300 hover:-translate-y-0.5"
           >
-            {loading
-              ? <Loader2 className="w-3 h-3 animate-spin" />
-              : <Check className="w-3 h-3" />
-            }
-            {loading ? 'Saving…' : 'Mark Paid'}
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            {loading ? 'Đang lưu…' : 'Đã trả'}
           </button>
         )}
       </div>
