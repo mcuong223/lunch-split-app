@@ -36,3 +36,15 @@ export interface Dish {
   latest_price: number  // full VND, e.g. 35000
   updated_at: string
 }
+
+export interface DebtGroup {
+  debtor: string
+  creditor: string
+  total: number  // full VND
+  items: Array<{
+    participantId: string
+    mealName: string
+    mealDate: string
+    amount: number
+  }>
+}

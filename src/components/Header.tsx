@@ -16,7 +16,7 @@ export default function Header({ dark, onToggleDark, onOpenMembers }: Props) {
 
   return (
     <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-teal-100/60 dark:border-slate-700/60">
-      <div className="max-w-xl mx-auto px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3">
+      <div className="max-w-xl lg:max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

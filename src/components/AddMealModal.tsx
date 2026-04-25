@@ -95,8 +95,18 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
         .select().single()
       if (mealError) throw mealError
 
+      const payerParticipant = filledParticipants.find(
+        p => p.name.trim().toLowerCase() === payerName.trim().toLowerCase()
+      )
       const rows = [
-        { meal_id: meal.id, name: payerName.trim(), dish: null, amount_owed: 0, is_paid: true, paid_at: new Date().toISOString() },
+        {
+          meal_id: meal.id,
+          name: payerName.trim(),
+          dish: payerParticipant?.dish.trim() || null,
+          amount_owed: payerParticipant ? toVND(payerParticipant.amount) : 0,
+          is_paid: true,
+          paid_at: new Date().toISOString(),
+        },
         ...filledParticipants
           .filter(p => p.name.trim().toLowerCase() !== payerName.trim().toLowerCase())
           .map(p => ({

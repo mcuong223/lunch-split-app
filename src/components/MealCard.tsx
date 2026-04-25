@@ -1,46 +1,50 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Users, CheckCircle2, Clock, Smartphone, QrCode, X, Banknote, ChevronDown } from 'lucide-react'
-import type { MealWithParticipants, MealParticipant, Member } from '../types'
+import type { MealWithParticipants, Member } from '../types'
 import ParticipantRow from './ParticipantRow'
 
 interface Props {
   meal: MealWithParticipants
   members: Member[]
   onParticipantChanged?: (participantId: string, isPaid: boolean) => void
+  onParticipantSettled?: () => void
   pinTransfer?: boolean  // true = always show transfer info, no toggle (for Today cards)
 }
 
-export default function MealCard({ meal, members, onParticipantChanged, pinTransfer = false }: Props) {
-  const [participants, setParticipants] = useState<MealParticipant[]>(
-    () => meal.meal_participants ?? []
+export default function MealCard({ meal, members, onParticipantChanged, onParticipantSettled, pinTransfer = false }: Props) {
+  type Override = { is_paid: boolean; paid_at: string | null }
+  const [overrides, setOverrides] = useState<Record<string, Override>>({})
+  // Fresh prop data is authoritative — drop overrides when the parent refetches.
+  useEffect(() => { setOverrides({}) }, [meal.meal_participants])
+  const participants = (meal.meal_participants ?? []).map(p =>
+    p.id in overrides ? { ...p, ...overrides[p.id] } : p
   )
+
   const [showQr, setShowQr] = useState(false)
-  const [showTransfer, setShowTransfer] = useState(pinTransfer)
+  const initiallyUnpaid = (meal.meal_participants ?? [])
+    .some(p => p.name !== meal.payer_name && !p.is_paid)
+  const [showTransfer, setShowTransfer] = useState(pinTransfer || initiallyUnpaid)
 
   const payer = members.find(m => m.name.toLowerCase() === meal.payer_name.toLowerCase())
   const hasTransferInfo = payer && (payer.momo_phone || payer.qr_image_url)
 
   function handleToggle(participantId: string, isPaid: boolean) {
-    setParticipants(prev =>
-      prev.map(p => p.id === participantId
-        ? { ...p, is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null }
-        : p
-      )
-    )
+    setOverrides(prev => ({ ...prev, [participantId]: { is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null } }))
     onParticipantChanged?.(participantId, isPaid)
   }
 
   function handleRevert(participantId: string, originalIsPaid: boolean, originalPaidAt: string | null) {
-    setParticipants(prev =>
-      prev.map(p => p.id === participantId
-        ? { ...p, is_paid: originalIsPaid, paid_at: originalPaidAt }
-        : p
-      )
-    )
+    setOverrides(prev => ({ ...prev, [participantId]: { is_paid: originalIsPaid, paid_at: originalPaidAt } }))
     onParticipantChanged?.(participantId, originalIsPaid)
   }
 
-  const nonPayer = participants.filter(p => !(p.name === meal.payer_name && p.amount_owed === 0))
+  const sortedParticipants = [...participants].sort((a, b) => {
+    if (a.name === meal.payer_name) return -1
+    if (b.name === meal.payer_name) return 1
+    return 0
+  })
+
+  const nonPayer = participants.filter(p => p.name !== meal.payer_name)
   const paidCount = nonPayer.filter(p => p.is_paid).length
   const allPaid = nonPayer.length > 0 && paidCount === nonPayer.length
   const progressPct = nonPayer.length > 0 ? (paidCount / nonPayer.length) * 100 : 100
@@ -113,13 +117,14 @@ export default function MealCard({ meal, members, onParticipantChanged, pinTrans
 
           {/* Participant list */}
           <div className="px-4 pt-1 pb-2 divide-y divide-slate-100/80 dark:divide-slate-700/80">
-            {participants.map(p => (
+            {sortedParticipants.map(p => (
               <ParticipantRow
                 key={p.id}
                 participant={p}
                 payerName={meal.payer_name}
                 onToggle={(isPaid) => handleToggle(p.id, isPaid)}
                 onRevert={(orig, origAt) => handleRevert(p.id, orig, origAt)}
+                onSettled={onParticipantSettled}
               />
             ))}
           </div>

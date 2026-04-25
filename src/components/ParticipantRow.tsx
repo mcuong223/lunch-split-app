@@ -8,16 +8,17 @@ interface Props {
   payerName: string
   onToggle: (isPaid: boolean) => void
   onRevert: (originalIsPaid: boolean, originalPaidAt: string | null) => void
+  onSettled?: () => void
 }
 
 function formatAmount(amount: number): string {
   return amount.toLocaleString('vi-VN') + 'đ'
 }
 
-export default function ParticipantRow({ participant, payerName, onToggle, onRevert }: Props) {
+export default function ParticipantRow({ participant, payerName, onToggle, onRevert, onSettled }: Props) {
   const [loading, setLoading] = useState(false)
 
-  const isPayer = participant.name === payerName && participant.amount_owed === 0
+  const isPayer = participant.name === payerName
   const isPaid = participant.is_paid
 
   async function handleMarkPaid() {
@@ -30,6 +31,7 @@ export default function ParticipantRow({ participant, payerName, onToggle, onRev
       onRevert(prev.is_paid, prev.paid_at)
     } finally {
       setLoading(false)
+      onSettled?.()
     }
   }
 
@@ -43,6 +45,7 @@ export default function ParticipantRow({ participant, payerName, onToggle, onRev
       onRevert(prev.is_paid, prev.paid_at)
     } finally {
       setLoading(false)
+      onSettled?.()
     }
   }
 
@@ -66,9 +69,9 @@ export default function ParticipantRow({ participant, payerName, onToggle, onRev
 
       {/* Tiền + trạng thái */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        {!isPayer && (
+        {participant.amount_owed > 0 && (
           <span className={`text-sm font-bold tabular-nums font-mono tracking-tight transition-all duration-200 ${
-            isPaid
+            isPaid && !isPayer
               ? 'text-teal-500/50 dark:text-teal-600/50 line-through'
               : 'text-slate-700 dark:text-slate-200'
           }`}>

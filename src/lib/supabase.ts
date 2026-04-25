@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Member, Dish } from '../types'
+import type { Member, Dish, DebtGroup } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -77,6 +77,46 @@ export async function upsertDishPrice(
     .upsert(entries, { onConflict: 'name' })
   if (error) throw error
 }
+
+// ─── Debts ────────────────────────────────────────────────────────────────────
+
+export async function fetchUnpaidDebts(): Promise<DebtGroup[]> {
+  const { data, error } = await supabase
+    .from('meal_participants')
+    .select('id, name, amount_owed, meals!inner(id, name, date, payer_name)')
+    .eq('is_paid', false)
+    .gt('amount_owed', 0)
+  if (error) throw error
+
+  const map = new Map<string, DebtGroup>()
+  for (const row of (data ?? []) as any[]) {
+    const debtor: string = row.name
+    const creditor: string = row.meals.payer_name
+    if (debtor === creditor) continue
+    const key = `${debtor}||${creditor}`
+    if (!map.has(key)) map.set(key, { debtor, creditor, total: 0, items: [] })
+    const g = map.get(key)!
+    g.total += row.amount_owed
+    g.items.push({
+      participantId: row.id,
+      mealName: row.meals.name,
+      mealDate: row.meals.date,
+      amount: row.amount_owed,
+    })
+  }
+  return Array.from(map.values())
+}
+
+export async function markPaidBulk(participantIds: string[]): Promise<void> {
+  if (participantIds.length === 0) return
+  const { error } = await supabase
+    .from('meal_participants')
+    .update({ is_paid: true, paid_at: new Date().toISOString() })
+    .in('id', participantIds)
+  if (error) throw error
+}
+
+// ─── Storage ──────────────────────────────────────────────────────────────────
 
 export async function uploadQrCode(memberId: string, file: File): Promise<string> {
   const ext = file.name.split('.').pop() ?? 'png'

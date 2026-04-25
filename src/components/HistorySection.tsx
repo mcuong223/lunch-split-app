@@ -8,6 +8,7 @@ interface Props {
   today: string
   members: Member[]
   mealAddedKey: number
+  onParticipantChanged: () => void
 }
 
 function formatDateLabel(dateStr: string): string {
@@ -20,7 +21,7 @@ function formatDateLabel(dateStr: string): string {
   })
 }
 
-const HistorySection = forwardRef<HTMLElement, Props>(({ today, members, mealAddedKey }, ref) => {
+const HistorySection = forwardRef<HTMLElement, Props>(({ today, members, mealAddedKey, onParticipantChanged }, ref) => {
   const { mealsByDate, loading, refetch } = useAllMeals()
   const [open, setOpen] = useState(true)
 
@@ -63,7 +64,7 @@ const HistorySection = forwardRef<HTMLElement, Props>(({ today, members, mealAdd
         ) : (
           <div className="space-y-8">
             {pastDates.map(date => (
-              <DateGroup key={date} date={date} meals={mealsByDate[date]} members={members} />
+              <DateGroup key={date} date={date} meals={mealsByDate[date]} members={members} onParticipantChanged={onParticipantChanged} />
             ))}
           </div>
         )
@@ -76,16 +77,23 @@ function DateGroup({
   date,
   meals,
   members,
+  onParticipantChanged,
 }: {
   date: string
   meals: ReturnType<typeof useAllMeals>['mealsByDate'][string]
   members: Member[]
+  onParticipantChanged: () => void
 }) {
   const [unpaidIds, setUnpaidIds] = useState<Set<string>>(
     () => new Set(
       meals.flatMap(m => m.meal_participants?.filter(p => !p.is_paid).map(p => p.id) ?? [])
     )
   )
+  useEffect(() => {
+    setUnpaidIds(new Set(
+      meals.flatMap(m => m.meal_participants?.filter(p => !p.is_paid).map(p => p.id) ?? [])
+    ))
+  }, [meals])
 
   function handleParticipantChanged(participantId: string, isPaid: boolean) {
     setUnpaidIds(prev => {
@@ -121,6 +129,7 @@ function DateGroup({
             meal={meal}
             members={members}
             onParticipantChanged={(id, isPaid) => handleParticipantChanged(id, isPaid)}
+            onParticipantSettled={onParticipantChanged}
           />
         ))}
       </div>

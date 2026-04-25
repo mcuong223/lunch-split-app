@@ -14,7 +14,8 @@
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"glassmorphism card modern dashboard\" --domain style -n 5)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"saas productivity dashboard\" --domain color -n 3)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"card hover shadow depth elevation\" --domain ux -n 5)",
-      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"button badge status pill modern\" --domain style -n 3)"
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"button badge status pill modern\" --domain style -n 3)",
+      "Bash(grep -E '\\\\.tsx?$')"
     ]
   }
 }

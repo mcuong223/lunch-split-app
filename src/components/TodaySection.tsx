@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, UtensilsCrossed } from 'lucide-react'
 import { useMeals } from '../hooks/useMeals'
 import MealCard from './MealCard'
@@ -8,6 +8,7 @@ import type { Member } from '../types'
 interface Props {
   today: string
   members: Member[]
+  refreshKey: number
   onMealAdded: () => void
   onParticipantChanged: () => void
   onMemberCreated: () => void
@@ -38,9 +39,11 @@ function SkeletonCard() {
   )
 }
 
-export default function TodaySection({ today, members, onMealAdded, onParticipantChanged, onMemberCreated }: Props) {
+export default function TodaySection({ today, members, refreshKey, onMealAdded, onParticipantChanged, onMemberCreated }: Props) {
   const { meals, loading, refetch } = useMeals(today)
   const [showModal, setShowModal] = useState(false)
+
+  useEffect(() => { if (refreshKey > 0) refetch() }, [refreshKey, refetch])
 
   function handleSaved() {
     setShowModal(false)
@@ -92,7 +95,7 @@ export default function TodaySection({ today, members, onMealAdded, onParticipan
               meal={meal}
               members={members}
               pinTransfer={true}
-              onParticipantChanged={() => onParticipantChanged()}
+              onParticipantSettled={onParticipantChanged}
             />
           ))}
         </div>
