@@ -91,6 +91,7 @@ export default function TodaySection({ today, members, onMealAdded, onParticipan
               key={meal.id}
               meal={meal}
               members={members}
+              pinTransfer={true}
               onParticipantChanged={() => onParticipantChanged()}
             />
           ))}

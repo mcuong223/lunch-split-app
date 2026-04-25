@@ -35,7 +35,7 @@ export default function KeyGate({ onUnlock }: Props) {
           <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-teal-700 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-teal-200 dark:shadow-teal-900">
             <Utensils className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-teal-900 dark:text-teal-100 tracking-tight">Lunch Split</h1>
+          <h1 className="text-2xl font-bold text-teal-900 dark:text-teal-100 tracking-tight">Televate Lunch Split</h1>
           <p className="text-sm text-teal-600/70 dark:text-teal-400/70 mt-1 font-medium">Chia tiền ăn trưa nhóm</p>
         </div>
 

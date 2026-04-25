@@ -107,7 +107,7 @@ export default function ParticipantRow({ participant, payerName, onToggle, onRev
             className="inline-flex items-center gap-1.5 text-xs bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-full font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-orange-200 dark:shadow-orange-900 hover:shadow-orange-300 hover:-translate-y-0.5"
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-            {loading ? 'Đang lưu…' : 'Đã trả'}
+            {loading ? 'Đang lưu…' : 'Trả tiền'}
           </button>
         )}
       </div>

@@ -141,7 +141,7 @@ function MemberCard({ member, onChanged }: { member: Member; onChanged: () => vo
         {!editing && (
           <div className="flex flex-wrap gap-2">
             {member.momo_phone ? (
-              <span className="inline-flex items-center gap-1.5 text-xs bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800 px-2.5 py-1 rounded-full font-medium">
+              <span className="inline-flex items-center gap-1.5 text-xs bg-pink-50 dark:bg-pink-900/20 text-pink-500 dark:text-pink-300 border border-pink-200 dark:border-pink-800 px-2.5 py-1 rounded-full font-medium">
                 <Smartphone className="w-3 h-3" />
                 {member.momo_phone}
               </span>
