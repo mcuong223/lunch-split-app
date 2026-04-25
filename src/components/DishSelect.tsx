@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown } from 'lucide-react'
 import type { Dish } from '../types'
 
@@ -21,20 +22,32 @@ export default function DishSelect({
 }: Props) {
   const [inputValue, setInputValue] = useState(value)
   const [isOpen, setIsOpen] = useState(false)
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { setInputValue(value) }, [value])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false)
-      }
+      if (
+        containerRef.current?.contains(e.target as Node) ||
+        dropdownRef.current?.contains(e.target as Node)
+      ) return
+      setIsOpen(false)
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  function calcAndOpen() {
+    if (containerRef.current) {
+      const r = containerRef.current.getBoundingClientRect()
+      setDropdownStyle({ top: r.bottom + 4, left: r.left, width: r.width, minWidth: 180 })
+    }
+    setIsOpen(true)
+  }
 
   const filtered = dishes.filter(d =>
     d.name.toLowerCase().includes(inputValue.toLowerCase())
@@ -57,9 +70,9 @@ export default function DishSelect({
           onChange={e => {
             setInputValue(e.target.value)
             onChange(e.target.value)
-            setIsOpen(true)
+            calcAndOpen()
           }}
-          onFocus={() => setIsOpen(true)}
+          onFocus={calcAndOpen}
           placeholder={placeholder}
           className={inputClassName}
         />
@@ -67,7 +80,7 @@ export default function DishSelect({
           <button
             type="button"
             tabIndex={-1}
-            onClick={() => { setIsOpen(o => !o); inputRef.current?.focus() }}
+            onClick={() => { if (isOpen) { setIsOpen(false) } else { calcAndOpen(); inputRef.current?.focus() } }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 cursor-pointer"
           >
             <ChevronDown className="w-3.5 h-3.5" />
@@ -75,8 +88,12 @@ export default function DishSelect({
         )}
       </div>
 
-      {isOpen && filtered.length > 0 && (
-        <div className="absolute z-50 top-full mt-1 w-full min-w-[180px] bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden">
+      {isOpen && filtered.length > 0 && createPortal(
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-600 overflow-hidden"
+        >
           <div className="max-h-48 overflow-y-auto">
             {filtered.map(d => (
               <button
@@ -94,7 +111,8 @@ export default function DishSelect({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

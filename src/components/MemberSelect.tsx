@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Plus, Check, Loader2 } from 'lucide-react'
 import { createMember } from '../lib/supabase'
 import type { Member } from '../types'
@@ -25,20 +26,32 @@ export default function MemberSelect({
   const [inputValue, setInputValue] = useState(value)
   const [isOpen, setIsOpen] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { setInputValue(value) }, [value])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false)
-      }
+      if (
+        containerRef.current?.contains(e.target as Node) ||
+        dropdownRef.current?.contains(e.target as Node)
+      ) return
+      setIsOpen(false)
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  function calcAndOpen() {
+    if (containerRef.current) {
+      const r = containerRef.current.getBoundingClientRect()
+      setDropdownStyle({ top: r.bottom + 4, left: r.left, width: r.width, minWidth: 160 })
+    }
+    setIsOpen(true)
+  }
 
   const filtered = members.filter(m =>
     m.name.toLowerCase().includes(inputValue.toLowerCase())
@@ -58,7 +71,6 @@ export default function MemberSelect({
       setInputValue(member.name)
       setIsOpen(false)
     } catch {
-      // name conflict — just close
       setIsOpen(false)
     } finally {
       setCreating(false)
@@ -81,24 +93,28 @@ export default function MemberSelect({
           onChange={e => {
             setInputValue(e.target.value)
             onChange(e.target.value)
-            setIsOpen(true)
+            calcAndOpen()
           }}
-          onFocus={() => setIsOpen(true)}
+          onFocus={calcAndOpen}
           placeholder={placeholder}
           className={inputClassName}
         />
         <button
           type="button"
           tabIndex={-1}
-          onClick={() => { setIsOpen(o => !o); inputRef.current?.focus() }}
+          onClick={() => { if (isOpen) { setIsOpen(false) } else { calcAndOpen(); inputRef.current?.focus() } }}
           className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 cursor-pointer"
         >
           <ChevronDown className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {isOpen && (filtered.length > 0 || canCreate) && (
-        <div className="absolute z-50 top-full mt-1 w-full min-w-[160px] bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden">
+      {isOpen && (filtered.length > 0 || canCreate) && createPortal(
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-600 overflow-hidden"
+        >
           <div className="max-h-48 overflow-y-auto">
             {filtered.map(m => (
               <button
@@ -128,7 +144,8 @@ export default function MemberSelect({
               <span>Tạo "<span className="font-semibold">{inputValue.trim()}</span>"</span>
             </button>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
