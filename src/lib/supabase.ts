@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Member } from '../types'
+import type { Member, Dish } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -58,6 +58,23 @@ export async function updateMember(
 
 export async function deleteMember(id: string): Promise<void> {
   const { error } = await supabase.from('members').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ─── Dishes ───────────────────────────────────────────────────────────────────
+
+export async function fetchDishes(): Promise<Dish[]> {
+  const { data } = await supabase.from('dishes').select('*').order('name')
+  return (data as Dish[]) ?? []
+}
+
+export async function upsertDishPrice(
+  entries: Array<{ name: string; latest_price: number }>
+): Promise<void> {
+  if (entries.length === 0) return
+  const { error } = await supabase
+    .from('dishes')
+    .upsert(entries, { onConflict: 'name' })
   if (error) throw error
 }
 

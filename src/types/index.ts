@@ -29,3 +29,10 @@ export interface Member {
   qr_image_url: string | null
   created_at: string
 }
+
+export interface Dish {
+  id: string
+  name: string
+  latest_price: number  // full VND, e.g. 35000
+  updated_at: string
+}

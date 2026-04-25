@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { X, Trash2, Loader2, AlertCircle } from 'lucide-react'
-import { supabase, generateMealName } from '../lib/supabase'
+import { supabase, generateMealName, upsertDishPrice } from '../lib/supabase'
+import { useDishes } from '../hooks/useDishes'
 import MemberSelect from './MemberSelect'
-import type { Member } from '../types'
+import DishSelect from './DishSelect'
+import type { Member, Dish } from '../types'
 
 interface ParticipantInput {
   name: string
@@ -32,6 +34,8 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const { dishes } = useDishes()
+
   const participantSum = participants.reduce((s, p) => s + toVND(p.amount), 0)
   const total = toVND(totalAmount)
   const sumMismatch = total > 0 && Math.abs(participantSum - total) > 0.01
@@ -39,7 +43,26 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
   function updateParticipant(index: number, field: keyof ParticipantInput, value: string) {
     setParticipants(prev => {
       const next = prev.map((p, i) => i === index ? { ...p, [field]: value } : p)
-      // Auto-add ghost row when user starts filling the last row
+      const last = next[next.length - 1]
+      if (index === next.length - 1 && (last.name || last.dish || last.amount)) {
+        return [...next, { name: '', dish: '', amount: '' }]
+      }
+      return next
+    })
+  }
+
+  function handleDishSelected(index: number, dish: Dish) {
+    setParticipants(prev => {
+      const next = prev.map((p, i) => {
+        if (i !== index) return p
+        return {
+          ...p,
+          dish: dish.name,
+          amount: p.amount === '' && dish.latest_price > 0
+            ? String(dish.latest_price / 1000)
+            : p.amount,
+        }
+      })
       const last = next[next.length - 1]
       if (index === next.length - 1 && (last.name || last.dish || last.amount)) {
         return [...next, { name: '', dish: '', amount: '' }]
@@ -87,6 +110,13 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
       ]
       const { error: partError } = await supabase.from('meal_participants').insert(rows)
       if (partError) throw partError
+
+      // Best-effort dish price update — fire-and-forget, not critical
+      const dishEntries = filledParticipants
+        .filter(p => p.dish.trim() && parseFloat(p.amount) > 0)
+        .map(p => ({ name: p.dish.trim(), latest_price: toVND(p.amount) }))
+      upsertDishPrice(dishEntries).catch(() => {})
+
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra')
@@ -168,13 +198,15 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-slate-500 pointer-events-none">k</span>
               </div>
               {total > 0 && (
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">= {total.toLocaleString('vi-VN')}đ</p>
+                <p className="mt-2 text-base font-bold text-teal-600 dark:text-teal-400 tabular-nums">
+                  = {total.toLocaleString('vi-VN')}đ
+                </p>
               )}
             </div>
 
             {/* Thành viên */}
             <div>
-              <div className="flex items-center justify-between mb-2.5">
+              <div className="mb-2.5">
                 <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                   Thành viên <span aria-hidden className="text-red-400">*</span>
                 </span>
@@ -201,12 +233,13 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
                         placeholder={isGhost ? '+ Thêm' : 'Tên'}
                         inputClassName={inputCls}
                       />
-                      <input
+                      <DishSelect
                         value={p.dish}
-                        onChange={e => updateParticipant(i, 'dish', e.target.value)}
+                        onChange={v => updateParticipant(i, 'dish', v)}
+                        onDishSelected={dish => handleDishSelected(i, dish)}
+                        dishes={dishes}
                         placeholder="Món ăn"
-                        aria-label={`Món ăn thành viên ${i + 1}`}
-                        className={inputCls}
+                        inputClassName={inputCls}
                       />
                       <div className="relative">
                         <input
@@ -238,8 +271,8 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
               {/* Tổng kiểm tra */}
               {participantSum > 0 && (
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Tổng cộng: <span className="font-bold text-slate-700 dark:text-slate-200">{participantSum.toLocaleString('vi-VN')}đ</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200 tabular-nums">
+                    Tổng: {participantSum.toLocaleString('vi-VN')}đ
                   </span>
                   {sumMismatch && (
                     <span className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full font-semibold">

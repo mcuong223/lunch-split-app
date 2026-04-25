@@ -1,0 +1,58 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Type check → Migrate → Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Source ────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Node + deps ───────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 3. Type check (fail fast before touching DB) ─────────────────────────
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # ── 4. Supabase migrations ───────────────────────────────────────────────
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Run database migrations
+        run: |
+          supabase init --force
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      # ── 5. Vercel deploy ─────────────────────────────────────────────────────
+      # vercel pull downloads VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY /
+      # VITE_MASTER_KEY from the Vercel project's environment variables.
+      # Make sure those are set in the Vercel dashboard → Project → Settings → Environment Variables.
+      - name: Deploy to Vercel
+        run: |
+          npm install --global vercel@latest
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
