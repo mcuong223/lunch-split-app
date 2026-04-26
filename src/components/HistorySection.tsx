@@ -84,16 +84,13 @@ function DateGroup({
   members: Member[]
   onParticipantChanged: () => void
 }) {
-  const [unpaidIds, setUnpaidIds] = useState<Set<string>>(
-    () => new Set(
-      meals.flatMap(m => m.meal_participants?.filter(p => !p.is_paid).map(p => p.id) ?? [])
-    )
+  const getUnpaidIds = (ms: typeof meals) => new Set(
+    ms.flatMap(m => (m.meal_participants ?? [])
+      .filter(p => !p.is_paid && p.name !== m.payer_name)
+      .map(p => p.id))
   )
-  useEffect(() => {
-    setUnpaidIds(new Set(
-      meals.flatMap(m => m.meal_participants?.filter(p => !p.is_paid).map(p => p.id) ?? [])
-    ))
-  }, [meals])
+  const [unpaidIds, setUnpaidIds] = useState(() => getUnpaidIds(meals))
+  useEffect(() => { setUnpaidIds(getUnpaidIds(meals)) }, [meals])
 
   function handleParticipantChanged(participantId: string, isPaid: boolean) {
     setUnpaidIds(prev => {

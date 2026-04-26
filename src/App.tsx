@@ -40,6 +40,7 @@ export default function App() {
   function handleParticipantChanged() {
     setOverdueKey(k => k + 1)
     setDebtKey(k => k + 1)
+    setMealAddedKey(k => k + 1)
   }
 
   function handleMealAdded() {
