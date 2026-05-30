@@ -4,7 +4,9 @@ import { supabase, generateMealName, upsertDishPrice } from '../lib/supabase'
 import { useDishes } from '../hooks/useDishes'
 import MemberSelect from './MemberSelect'
 import DishSelect from './DishSelect'
+import AIQuickInput from './AIQuickInput'
 import type { Member, Dish } from '../types'
+import type { ParsedMeal } from '../lib/parseWithLLM'
 
 interface ParticipantInput {
   name: string
@@ -76,6 +78,29 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
       const next = prev.filter((_, i) => i !== index)
       return next.length === 0 ? [{ name: '', dish: '', amount: '' }] : next
     })
+  }
+
+  function matchMemberName(input: string, mems: Member[]): string {
+    const lower = input.toLowerCase()
+    return (
+      mems.find(m => m.name.toLowerCase() === lower)?.name ??
+      mems.find(m => m.name.toLowerCase().includes(lower) || lower.includes(m.name.toLowerCase()))?.name ??
+      input
+    )
+  }
+
+  function handleAIParsed(result: ParsedMeal) {
+    if (result.payer) setPayerName(matchMemberName(result.payer, members))
+    const filled = result.participants
+      .filter(p => p.name.trim())
+      .map(p => ({
+        name: matchMemberName(p.name, members),
+        dish: p.dish,
+        amount: p.amount != null ? String(p.amount) : '',
+      }))
+    setParticipants([...filled, { name: '', dish: '', amount: '' }])
+    const sum = result.participants.reduce((s, p) => s + (p.amount ?? 0), 0)
+    if (sum > 0 && !totalAmount) setTotalAmount(String(sum))
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -159,6 +184,9 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
 
         <form onSubmit={handleSubmit} className="overflow-y-auto flex-1" aria-labelledby="modal-title">
           <div className="px-5 py-4 space-y-4">
+
+            {/* AI Quick Input */}
+            <AIQuickInput members={members} onParsed={handleAIParsed} />
 
             {/* Người trả + Ngày */}
             <div className="grid grid-cols-2 gap-3">
