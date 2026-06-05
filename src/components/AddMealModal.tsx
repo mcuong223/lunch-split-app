@@ -35,6 +35,7 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
   ])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [aiInputText, setAiInputText] = useState<string | null>(null)
 
   const { dishes } = useDishes()
 
@@ -89,7 +90,8 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
     )
   }
 
-  function handleAIParsed(result: ParsedMeal) {
+  function handleAIParsed(result: ParsedMeal, rawText: string) {
+    setAiInputText(rawText.trim() || null)
     if (result.payer) setPayerName(matchMemberName(result.payer, members))
     const filled = result.participants
       .filter(p => p.name.trim())
@@ -116,7 +118,7 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
       const mealName = await generateMealName(date)
       const { data: meal, error: mealError } = await supabase
         .from('meals')
-        .insert({ name: mealName, date, payer_name: payerName.trim(), total_amount: total || participantSum })
+        .insert({ name: mealName, date, payer_name: payerName.trim(), total_amount: total || participantSum, ai_input_text: aiInputText })
         .select().single()
       if (mealError) throw mealError
 

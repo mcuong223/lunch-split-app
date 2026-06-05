@@ -6,7 +6,7 @@ import type { ParsedMeal } from '../lib/parseWithLLM'
 
 interface Props {
   members: Member[]
-  onParsed: (result: ParsedMeal) => void
+  onParsed: (result: ParsedMeal, rawText: string) => void
 }
 
 type Phase = 'idle' | 'working' | 'done'
@@ -52,12 +52,9 @@ export default function AIQuickInput({ members, onParsed }: Props) {
         return
       }
       setPhase('done')
-      onParsed(result)
+      onParsed(result, text)
       setTimeout(() => {
-        setText('')
-        clearImage()
         setPhase('idle')
-        setExpanded(false)
       }, 1200)
     } catch (err) {
       setParseError(err instanceof Error ? err.message : 'Có lỗi xảy ra. Thử lại hoặc nhập thủ công.')
