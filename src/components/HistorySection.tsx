@@ -1,5 +1,5 @@
 import { forwardRef, useState, useEffect } from 'react'
-import { ChevronDown, ChevronRight, Clock } from 'lucide-react'
+import { ChevronDown, ChevronRight, Clock, ChevronsDown } from 'lucide-react'
 import { useAllMeals } from '../hooks/useMeals'
 import MealCard from './MealCard'
 import type { Member } from '../types'
@@ -10,6 +10,8 @@ interface Props {
   mealAddedKey: number
   onParticipantChanged: () => void
 }
+
+const MEALS_PER_PAGE = 5
 
 function formatDateLabel(dateStr: string): string {
   const [year, month, day] = dateStr.split('-')
@@ -24,6 +26,7 @@ function formatDateLabel(dateStr: string): string {
 const HistorySection = forwardRef<HTMLElement, Props>(({ today, members, mealAddedKey, onParticipantChanged }, ref) => {
   const { mealsByDate, loading, refetch } = useAllMeals()
   const [open, setOpen] = useState(true)
+  const [visibleMealCount, setVisibleMealCount] = useState(MEALS_PER_PAGE)
 
   useEffect(() => {
     if (mealAddedKey > 0) refetch()
@@ -33,6 +36,24 @@ const HistorySection = forwardRef<HTMLElement, Props>(({ today, members, mealAdd
   const pastDates = Object.keys(mealsByDate)
     .filter(d => d < today)
     .sort((a, b) => b.localeCompare(a))
+
+  // Build visible dates up to visibleMealCount meals (never cut a date group)
+  let shownMeals = 0
+  const visibleDates: string[] = []
+  for (const date of pastDates) {
+    if (shownMeals >= visibleMealCount) break
+    visibleDates.push(date)
+    shownMeals += mealsByDate[date].length
+  }
+
+  const totalMeals = pastDates.reduce((sum, d) => sum + mealsByDate[d].length, 0)
+  const hasMore = shownMeals < totalMeals
+  const remainingCount = totalMeals - shownMeals
+
+  function handleMealMutated() {
+    refetch()
+    onParticipantChanged()
+  }
 
   return (
     <section ref={ref} className="pt-4 pb-4">
@@ -63,9 +84,27 @@ const HistorySection = forwardRef<HTMLElement, Props>(({ today, members, mealAdd
           <p className="text-sm text-slate-400 dark:text-slate-500 font-medium pl-3.5">Chưa có lịch sử.</p>
         ) : (
           <div className="space-y-8">
-            {pastDates.map(date => (
-              <DateGroup key={date} date={date} meals={mealsByDate[date]} members={members} onParticipantChanged={onParticipantChanged} />
+            {visibleDates.map(date => (
+              <DateGroup
+                key={date}
+                date={date}
+                meals={mealsByDate[date]}
+                members={members}
+                onParticipantChanged={onParticipantChanged}
+                onMealMutated={handleMealMutated}
+              />
             ))}
+
+            {hasMore && (
+              <button
+                type="button"
+                onClick={() => setVisibleMealCount(prev => prev + MEALS_PER_PAGE)}
+                className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/10 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-700 transition-all duration-200 cursor-pointer"
+              >
+                <ChevronsDown className="w-4 h-4" />
+                Xem thêm ({remainingCount} bữa)
+              </button>
+            )}
           </div>
         )
       )}
@@ -78,11 +117,13 @@ function DateGroup({
   meals,
   members,
   onParticipantChanged,
+  onMealMutated,
 }: {
   date: string
   meals: ReturnType<typeof useAllMeals>['mealsByDate'][string]
   members: Member[]
   onParticipantChanged: () => void
+  onMealMutated: () => void
 }) {
   const getUnpaidIds = (ms: typeof meals) => new Set(
     ms.flatMap(m => (m.meal_participants ?? [])
@@ -127,6 +168,8 @@ function DateGroup({
             members={members}
             onParticipantChanged={(id, isPaid) => handleParticipantChanged(id, isPaid)}
             onParticipantSettled={onParticipantChanged}
+            onDeleted={onMealMutated}
+            onEdited={onMealMutated}
           />
         ))}
       </div>

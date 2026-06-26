@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Users, CheckCircle2, Clock, Smartphone, QrCode, X, Banknote, ChevronDown } from 'lucide-react'
+import { Users, CheckCircle2, Clock, Smartphone, QrCode, X, Banknote, ChevronDown, Pencil, Trash2, Loader2 } from 'lucide-react'
 import type { MealWithParticipants, Member } from '../types'
 import ParticipantRow from './ParticipantRow'
+import { deleteMeal } from '../lib/supabase'
+import EditMealModal from './EditMealModal'
 
 interface Props {
   meal: MealWithParticipants
@@ -9,9 +11,11 @@ interface Props {
   onParticipantChanged?: (participantId: string, isPaid: boolean) => void
   onParticipantSettled?: () => void
   pinTransfer?: boolean  // true = always show transfer info, no toggle (for Today cards)
+  onDeleted?: () => void
+  onEdited?: () => void
 }
 
-export default function MealCard({ meal, members, onParticipantChanged, onParticipantSettled, pinTransfer = false }: Props) {
+export default function MealCard({ meal, members, onParticipantChanged, onParticipantSettled, pinTransfer = false, onDeleted, onEdited }: Props) {
   type Override = { is_paid: boolean; paid_at: string | null }
   const [overrides, setOverrides] = useState<Record<string, Override>>({})
   // Fresh prop data is authoritative — drop overrides when the parent refetches.
@@ -21,6 +25,20 @@ export default function MealCard({ meal, members, onParticipantChanged, onPartic
   )
 
   const [showQr, setShowQr] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+
+  async function handleConfirmDelete() {
+    setDeleting(true)
+    try {
+      await deleteMeal(meal.id)
+      onDeleted?.()
+    } catch {
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
+  }
   const initiallyUnpaid = (meal.meal_participants ?? [])
     .some(p => p.name !== meal.payer_name && !p.is_paid)
   const [showTransfer, setShowTransfer] = useState(pinTransfer || initiallyUnpaid)
@@ -93,9 +111,50 @@ export default function MealCard({ meal, members, onParticipantChanged, onPartic
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 flex-shrink-0">
-              <Users className="w-3.5 h-3.5" />
-              <span>{paidCount}<span className="text-teal-400 dark:text-teal-600 font-normal">/{nonPayer.length}</span></span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400">
+                <Users className="w-3.5 h-3.5" />
+                <span>{paidCount}<span className="text-teal-400 dark:text-teal-600 font-normal">/{nonPayer.length}</span></span>
+              </div>
+              {confirmDelete ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-red-600 dark:text-red-400 font-semibold whitespace-nowrap">Xoá bữa này?</span>
+                  <button
+                    type="button"
+                    onClick={handleConfirmDelete}
+                    disabled={deleting}
+                    className="inline-flex items-center gap-1 text-xs bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-semibold px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                  >
+                    {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Xoá'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-semibold px-2 py-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  >
+                    Huỷ
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowEdit(true)}
+                    aria-label="Sửa bữa ăn"
+                    className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 dark:text-slate-600 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    aria-label="Xoá bữa ăn"
+                    className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -186,6 +245,16 @@ export default function MealCard({ meal, members, onParticipantChanged, onPartic
           </div>
         </div>
       </div>
+
+      {/* Edit modal — lazy import to keep bundle lean */}
+      {showEdit && (
+        <EditMealModal
+          meal={meal}
+          members={members}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => { setShowEdit(false); onEdited?.() }}
+        />
+      )}
 
       {/* QR lightbox */}
       {showQr && payer?.qr_image_url && (

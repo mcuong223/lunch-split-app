@@ -20,6 +20,11 @@ export async function generateMealName(date: string): Promise<string> {
   return `${label} - ${String(count + 1).padStart(2, '0')}`
 }
 
+export async function deleteMeal(mealId: string): Promise<void> {
+  const { error } = await supabase.from('meals').delete().eq('id', mealId)
+  if (error) throw error
+}
+
 export async function markPaid(participantId: string) {
   const { error } = await supabase
     .from('meal_participants')

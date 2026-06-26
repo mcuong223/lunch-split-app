@@ -96,6 +96,8 @@ export default function TodaySection({ today, members, refreshKey, onMealAdded, 
               members={members}
               pinTransfer={true}
               onParticipantSettled={onParticipantChanged}
+              onDeleted={refetch}
+              onEdited={refetch}
             />
           ))}
         </div>
