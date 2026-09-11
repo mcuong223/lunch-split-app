@@ -11,4 +11,4 @@ export function getGroqClient(): Groq {
 }
 
 export const TEXT_MODEL = 'openai/gpt-oss-20b'
-export const VISION_MODEL = 'qwen/qwen3.6-27b'
+export const VISION_MODEL = 'qwen/qwen3.8-27b'
