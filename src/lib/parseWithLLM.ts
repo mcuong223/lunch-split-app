@@ -128,8 +128,8 @@ export async function parseWithLLM(
         ],
       }],
       temperature: 0.1,
-      max_tokens: 512,
-      reasoning_effort: 'none',
+      max_tokens: 2048,
+      reasoning_effort: 'low',
     })
     responseText = completion.choices[0].message.content ?? ''
   } else {
@@ -137,8 +137,8 @@ export async function parseWithLLM(
       model: TEXT_MODEL,
       messages: [{ role: 'user', content: buildTextPrompt(text, members) }],
       temperature: 0.1,
-      max_tokens: 512,
-      reasoning_effort: 'none',
+      max_tokens: 2048,
+      reasoning_effort: 'low',
     })
     responseText = completion.choices[0].message.content ?? ''
   }
