@@ -94,7 +94,6 @@ function extractParsedMeal(raw: string): ParsedMeal {
     payer: typeof raw2.payer === 'string' && raw2.payer ? raw2.payer : null,
     participants: raw2.participants
       .filter((p): p is Record<string, unknown> => typeof p === 'object' && p !== null)
-      .filter(p => typeof p['name'] === 'string' && (p['name'] as string).trim())
       .map(p => ({
         name: (p['name'] as string).trim(),
         dish: typeof p['dish'] === 'string' ? p['dish'].trim() : '',
