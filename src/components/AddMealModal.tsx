@@ -94,7 +94,6 @@ export default function AddMealModal({ defaultDate, members, onClose, onSaved, o
     setAiInputText(rawText.trim() || null)
     if (result.payer) setPayerName(matchMemberName(result.payer, members))
     const filled = result.participants
-      .filter(p => p.name.trim())
       .map(p => ({
         name: matchMemberName(p.name, members),
         dish: p.dish,
