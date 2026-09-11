@@ -64,7 +64,9 @@ async function fileToBase64(file: File): Promise<string> {
 }
 
 function extractParsedMeal(raw: string): ParsedMeal {
-  const match = raw.match(/\{[\s\S]*\}/)
+  // Strip thinking tags emitted by reasoning models (e.g. Qwen) before extracting JSON
+  const stripped = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+  const match = stripped.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('AI không trả về JSON hợp lệ. Thử lại hoặc nhập thủ công.')
 
   let parsed: unknown

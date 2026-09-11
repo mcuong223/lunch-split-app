@@ -10,5 +10,5 @@ export function getGroqClient(): Groq {
   return _client
 }
 
-export const TEXT_MODEL = 'llama-3.1-8b-instant'
+export const TEXT_MODEL = 'openai/gpt-oss-20b'
 export const VISION_MODEL = 'qwen/qwen3.6-27b'
