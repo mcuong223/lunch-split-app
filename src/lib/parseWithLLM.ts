@@ -112,7 +112,7 @@ export async function parseWithLLM(
 
   if (image) {
     const base64 = await fileToBase64(image)
-    const completion = await client.chat.completions.create({
+    const completion = await (client.chat.completions.create as Function)({
       model: VISION_MODEL,
       messages: [{
         role: 'user',
@@ -129,6 +129,7 @@ export async function parseWithLLM(
       }],
       temperature: 0.1,
       max_tokens: 512,
+      reasoning_effort: 'none',
     })
     responseText = completion.choices[0].message.content ?? ''
   } else {
