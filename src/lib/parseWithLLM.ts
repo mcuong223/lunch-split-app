@@ -22,6 +22,7 @@ Quy tắc:
 - Người trả tiền được xác định bởi "[Tên] tra" hoặc "[Tên] thanh toán"
 - Nếu không có người trả, đặt payer là null
 - Khớp tên với danh sách thành viên đã biết khi có thể (dùng chính tả chuẩn)
+- Nếu có số lượng N trước tên món (vd: "2 Bún bò 120k"), tạo đúng N entries riêng biệt cho món đó, mỗi entry có amount = tổng / N (vd: 2 entries, mỗi cái amount 60)
 - Nếu thiếu tên người ăn, dùng chuỗi rỗng "" — vẫn giữ lại món đó trong danh sách
 - Nếu thiếu tên món, dùng chuỗi rỗng "" — vẫn giữ lại người đó trong danh sách
 - Nếu không có số tiền, dùng null
@@ -47,6 +48,7 @@ Quy tắc:
 - Số tiền đơn vị nghìn VND (35,000đ → 35; 40k → 40)
 - Nếu không rõ người trả, đặt payer là null
 - Khớp tên với danh sách thành viên đã biết khi có thể
+- Nếu có số lượng N trước tên món (vd: "2 Bún bò 120k"), tạo đúng N entries riêng biệt cho món đó, mỗi entry có amount = tổng / N (vd: 2 entries, mỗi cái amount 60)
 - Nếu thiếu tên người ăn, dùng chuỗi rỗng "" — vẫn giữ lại món đó trong danh sách
 - Nếu thiếu tên món, dùng chuỗi rỗng "" — vẫn giữ lại người đó trong danh sách
 - Nếu không có số tiền, dùng null
